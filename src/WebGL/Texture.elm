@@ -4,6 +4,8 @@ module WebGL.Texture
         , Error(..)
         , load
         , loadWith
+        , loadElement
+        , loadElementWith
         , Options
         , defaultOptions
         , nonPowerOfTwoOptions
@@ -25,10 +27,10 @@ module WebGL.Texture
 
 {-|
 # Texture
-@docs Texture, load, Error, size
+@docs Texture, load, loadElement, Error, size
 
 # Custom Loading
-@docs loadWith, Options, defaultOptions
+@docs loadWith, loadElementWith, Options, defaultOptions
 
 ## Resizing
 @docs Resize, linear, nearest,
@@ -75,10 +77,31 @@ load =
     loadWith defaultOptions
 
 
+{-| Loads a texture from the given element with default options.
+
+The Y axis of the texture is flipped automatically for you, so it has
+the same direction as in the clip-space, i.e. pointing up.
+
+If you need to change flipping, filtering or wrapping, you can use
+[`loadElementWith`](#loadElementWith).
+
+    loadElement elementId =
+        loadElementWith defaultOptions elementId
+
+-}
+loadElement : String -> Task Error Texture
+loadElement =
+    loadElementWith defaultOptions
+
+
 {-| Loading a texture can result in two kinds of errors:
 
 * `LoadError` means the image did not load for some reason. Maybe
   it was a network problem, or maybe it was a bad file format.
+
+* `ElementNotFoundError` means the specified element was not found in
+  the document. Maybe the element ID was misspeled or it is not yet
+  accessible from the DOM model.
 
 * `SizeError` means you are trying to load a weird shaped image.
   For most operations you want a rectangle where the width is a power
@@ -90,15 +113,27 @@ load =
 type Error
     = LoadError
     | SizeError Int Int
+    | ElementNotFoundError String
 
 
-{-| Same as load, but allows to set options.
+{-| Same as `load`, but allows to set options.
 -}
 loadWith : Options -> String -> Task Error Texture
 loadWith { magnify, minify, horizontalWrap, verticalWrap, flipY } url =
     let
         expand (Resize mag) (Resize min) (Wrap hor) (Wrap vert) =
             Native.Texture.load mag min hor vert flipY url
+    in
+        expand magnify minify horizontalWrap verticalWrap
+
+
+{-| Same as `loadElement`, but allows to set options.
+-}
+loadElementWith : Options -> String -> Task Error Texture
+loadElementWith { magnify, minify, horizontalWrap, verticalWrap, flipY } url =
+    let
+        expand (Resize mag) (Resize min) (Wrap hor) (Wrap vert) =
+            Native.Texture.loadElement mag min hor vert flipY url
     in
         expand magnify minify horizontalWrap verticalWrap
 

@@ -4,8 +4,8 @@ module WebGL.Texture
         , Error(..)
         , load
         , loadWith
-        , loadElement
-        , loadElementWith
+        , fromElement
+        , fromElementWith
         , Options
         , defaultOptions
         , nonPowerOfTwoOptions
@@ -27,10 +27,10 @@ module WebGL.Texture
 
 {-|
 # Texture
-@docs Texture, load, loadElement, Error, size
+@docs Texture, load, fromElement, Error, size
 
 # Custom Loading
-@docs loadWith, loadElementWith, Options, defaultOptions
+@docs loadWith, fromElementWith, Options, defaultOptions
 
 ## Resizing
 @docs Resize, linear, nearest,
@@ -79,19 +79,42 @@ load =
 
 {-| Loads a texture from the given element with default options.
 
+For the parity with `evancz/elm-graphics`, where it is impossible to
+set `id` attribute to the `collage` instance, but only it's wrapper,
+this method actually asks for the *wrapper ID* instead.
+
+The wrapped element should be either a `canvas`, `video`, `svg` or
+`img` HTML element or else it will fail to render.
+
+So your `view` may look like this:
+
+    view : Model -> Html Msg
+    view model =
+        div
+            [ ]
+            [ Element.toHtml
+                <| tag "my-element"
+                <| collage ...
+            , WebGL.toHtmlWith ...
+            ]
+
+And then you will be able to call:
+
+    Texture.fromElement "my-element"
+
 The Y axis of the texture is flipped automatically for you, so it has
 the same direction as in the clip-space, i.e. pointing up.
 
 If you need to change flipping, filtering or wrapping, you can use
-[`loadElementWith`](#loadElementWith).
+[`fromElementWith`](#fromElementWith).
 
-    loadElement elementId =
-        loadElementWith defaultOptions elementId
+    fromElement elementId =
+        fromElementWith defaultOptions elementId
 
 -}
-loadElement : String -> Task Error Texture
-loadElement =
-    loadElementWith defaultOptions
+fromElement : String -> Task Error Texture
+fromElement =
+    fromElementWith defaultOptions
 
 
 {-| Loading a texture can result in two kinds of errors:
@@ -127,13 +150,13 @@ loadWith { magnify, minify, horizontalWrap, verticalWrap, flipY } url =
         expand magnify minify horizontalWrap verticalWrap
 
 
-{-| Same as `loadElement`, but allows to set options.
+{-| Same as `fromElement`, but allows to set options.
 -}
-loadElementWith : Options -> String -> Task Error Texture
-loadElementWith { magnify, minify, horizontalWrap, verticalWrap, flipY } url =
+fromElementWith : Options -> String -> Task Error Texture
+fromElementWith { magnify, minify, horizontalWrap, verticalWrap, flipY } elementId =
     let
         expand (Resize mag) (Resize min) (Wrap hor) (Wrap vert) =
-            Native.Texture.loadElement mag min hor vert flipY url
+            Native.Texture.fromElement mag min hor vert flipY elementId
     in
         expand magnify minify horizontalWrap verticalWrap
 

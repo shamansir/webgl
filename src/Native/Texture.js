@@ -67,19 +67,21 @@ var _elm_community$webgl$Native_Texture = function () {
     });
   }
 
-  function loadElement(magnify, mininify, horizontalWrap, verticalWrap, flipY, elementId) {
+  function fromElement(magnify, mininify, horizontalWrap, verticalWrap, flipY, elementId) {
     // eslint-disable-next-line camelcase
     var Scheduler = _elm_lang$core$Native_Scheduler;
     var isMipmap = mininify !== NEAREST && mininify !== LINEAR;
     return Scheduler.nativeBinding(function (callback) {
-      var element = document.getElementById(elementId).firstChild;
-      if (typeof element === 'undefined' || element === null) {
+      var wrapper = document.getElementById(elementId);
+      if ((typeof wrapper === 'undefined' || wrapper === null) ||
+          (typeof wrapper.firstChild === 'undefined' || wrapper.firstChild === null)) {
         callback(Scheduler.fail({
           ctor: 'ElementNotFoundError',
           _0: elementId
         }));
         return;
       }
+      var element = wrapper.firstChild;
       function createTexture(gl) {
         var tex = gl.createTexture();
         try {
@@ -135,7 +137,7 @@ var _elm_community$webgl$Native_Texture = function () {
   return {
     size: size,
     load: F6(load),
-    loadElement: F6(loadElement)
+    fromElement: F6(fromElement)
   };
 
 }();

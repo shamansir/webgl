@@ -8,9 +8,9 @@ module Main exposing (main)
 import AnimationFrame
 import Html exposing (Html, div)
 import Html.Attributes exposing (width, height, style, id)
-import Collage exposing (collage, filled, circle)
+import Collage exposing (collage, filled, circle, rect, move, rotate)
 import Element exposing (toHtml, tag)
-import Color exposing (red, blue)
+import Color exposing (red, blue, black)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
@@ -47,7 +47,7 @@ update action model =
 init : ( Model, Cmd Msg )
 init =
     ( { texture = Nothing, theta = 0 }
-    , Task.attempt TextureLoaded (Texture.loadElement "my-element")
+    , Task.attempt TextureLoaded (Texture.fromElement "my-element")
     )
 
 
@@ -68,12 +68,13 @@ main =
 view : Model -> Html Msg
 view { texture, theta } =
     div
-        [ (id "wrapper") ]
+        [ ]
         [ Element.toHtml
             <| tag "my-element"
             <| collage 128 128
-                [ filled blue
-                (circle 40)
+                [ (circle 64) |> filled blue
+                , (rect 3 60) |> filled black
+                              |> rotate theta
                 ]
         , WebGL.toHtmlWith
             [ WebGL.alpha True

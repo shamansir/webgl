@@ -6,8 +6,11 @@ module Main exposing (main)
 -}
 
 import AnimationFrame
-import Html exposing (Html)
-import Html.Attributes exposing (width, height, style)
+import Html exposing (Html, div)
+import Html.Attributes exposing (width, height, style, id)
+import Collage exposing (collage, filled, circle)
+import Element exposing (toHtml, tag)
+import Color exposing (red, blue)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
@@ -64,20 +67,29 @@ main =
 
 view : Model -> Html Msg
 view { texture, theta } =
-    WebGL.toHtmlWith
-        [ WebGL.alpha True
-        , WebGL.antialias
-        , WebGL.depth 1
-        , WebGL.stencil 0
+    div
+        [ (id "wrapper") ]
+        [ Element.toHtml
+            <| tag "my-element"
+            <| collage 100 100
+                [ filled blue
+                (circle 40)
+                ]
+        , WebGL.toHtmlWith
+            [ WebGL.alpha True
+            , WebGL.antialias
+            , WebGL.depth 1
+            , WebGL.stencil 0
+            ]
+            [ width 400
+            , height 400
+            , style [ ( "display", "block" ) ]
+            ]
+            (texture
+                |> Maybe.map (scene (perspective theta))
+                |> Maybe.withDefault []
+            )
         ]
-        [ width 400
-        , height 400
-        , style [ ( "display", "block" ) ]
-        ]
-        (texture
-            |> Maybe.map (scene (perspective theta))
-            |> Maybe.withDefault []
-        )
 
 
 perspective : Float -> Mat4

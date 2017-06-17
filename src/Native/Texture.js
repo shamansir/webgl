@@ -72,17 +72,17 @@ var _elm_community$webgl$Native_Texture = function () {
     var Scheduler = _elm_lang$core$Native_Scheduler;
     var isMipmap = mininify !== NEAREST && mininify !== LINEAR;
     return Scheduler.nativeBinding(function (callback) {
-      document.addEventListener('DOMContentLoaded', function() {
-        var element = document.getElementById(elementId);
-        if (typeof element === 'undefined' || element === null) {
-          callback(Scheduler.fail({
-            ctor: 'ElementNotFoundError',
-            _0: elementId
-          }));
-          return;
-        }
-        function createTexture(gl) {
-          var tex = gl.createTexture();
+      var element = document.getElementById(elementId).firstChild;
+      if (typeof element === 'undefined' || element === null) {
+        callback(Scheduler.fail({
+          ctor: 'ElementNotFoundError',
+          _0: elementId
+        }));
+        return;
+      }
+      function createTexture(gl) {
+        var tex = gl.createTexture();
+        try {
           gl.bindTexture(gl.TEXTURE_2D, tex);
           gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
@@ -94,35 +94,37 @@ var _elm_community$webgl$Native_Texture = function () {
             gl.generateMipmap(gl.TEXTURE_2D);
           }
           gl.bindTexture(gl.TEXTURE_2D, null);
-          return tex;
+        } catch (err) {
+          if (window.console && window.console.error) window.console.error(err);
         }
-        var elementRect = element.getBoundingClientRect();
-        var width = element.width;
-        var height = element.height;
-        var widthPowerOfTwo = (width & (width - 1)) === 0;
-        var heightPowerOfTwo = (height & (height - 1)) === 0;
-        var isSizeValid = (widthPowerOfTwo && heightPowerOfTwo) || (
-          !isMipmap
-          && horizontalWrap === CLAMP_TO_EDGE
-          && verticalWrap === CLAMP_TO_EDGE
-        );
-        if (isSizeValid) {
-          callback(Scheduler.succeed({
-            ctor: 'Texture',
-            id: guid(),
-            createTexture: createTexture,
-            width: width,
-            height: height
-          }));
-        } else {
-          callback(Scheduler.fail({
-            ctor: 'SizeError',
-            _0: width,
-            _1: height
-          }));
-        }
-      });
-    })
+        return tex;
+      }
+      var elementRect = element.getBoundingClientRect();
+      var width = element.width;
+      var height = element.height;
+      var widthPowerOfTwo = (width & (width - 1)) === 0;
+      var heightPowerOfTwo = (height & (height - 1)) === 0;
+      var isSizeValid = (widthPowerOfTwo && heightPowerOfTwo) || (
+        !isMipmap
+        && horizontalWrap === CLAMP_TO_EDGE
+        && verticalWrap === CLAMP_TO_EDGE
+      );
+      if (isSizeValid) {
+        callback(Scheduler.succeed({
+          ctor: 'Texture',
+          id: guid(),
+          createTexture: createTexture,
+          width: width,
+          height: height
+        }));
+      } else {
+        callback(Scheduler.fail({
+          ctor: 'SizeError',
+          _0: width,
+          _1: height
+        }));
+      }
+    });
   }
 
   function size(texture) {

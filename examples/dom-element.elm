@@ -71,7 +71,7 @@ view { texture, theta } =
         [ (id "wrapper") ]
         [ Element.toHtml
             <| tag "my-element"
-            <| collage 100 100
+            <| collage 128 128
                 [ filled blue
                 (circle 40)
                 ]

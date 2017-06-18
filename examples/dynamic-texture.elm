@@ -46,13 +46,10 @@ update action model =
 
 init : ( Model, Cmd Msg )
 init =
-    let
-        defaultOptions = Texture.defaultOptions
-    in
-        ( { texture = Nothing, theta = 0 }
-        , Task.attempt TextureLoaded
-            (Texture.fromDynamicElement UseRAF "my-element")
-        )
+    ( { texture = Nothing, theta = 0 }
+    , Task.attempt TextureLoaded
+        (Texture.fromDynamicElement UseRAF "my-element")
+    )
 
 
 main : Program Never Model Msg

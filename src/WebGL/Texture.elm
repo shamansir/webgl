@@ -5,6 +5,7 @@ module WebGL.Texture
         , load
         , loadWith
         , fromElement
+        , fromDynamicElement
         , fromElementWith
         , Options
         , defaultOptions
@@ -23,11 +24,12 @@ module WebGL.Texture
         , clampToEdge
         , mirroredRepeat
         , size
+        , DynamicsOption(..)
         )
 
 {-|
 # Texture
-@docs Texture, load, fromElement, Error, size
+@docs Texture, load, fromElement, fromDynamicElement, Error, size
 
 # Custom Loading
 @docs loadWith, fromElementWith, Options, defaultOptions
@@ -40,6 +42,9 @@ module WebGL.Texture
 
 ## Wrapping
 @docs Wrap, repeat, clampToEdge, mirroredRepeat
+
+## Dynamic Textures
+@docs DynamicsOption
 
 # Things You Shouldn’t Do
 @docs nonPowerOfTwoOptions
@@ -117,6 +122,36 @@ fromElement =
     fromElementWith defaultOptions
 
 
+{-| This function allows you not only to use the DOM element as a Texture
+source, but also to update the texture regularly with specified interval or
+by requestAnimationFrame. This allows you to use a video or moving animation
+as a source of your texture.
+
+Please notice that using this function with a lot of objects could heavily
+slow down the animation, especially if you use interval and not RAF.
+
+The options could be: `Static`—static texture (default), `UseRAF`—use
+`requestAnimationFrame` to update from texture source, `UseInterval <interval>`—use
+specified interval.
+
+Examples:
+
+    fromDynamicElement UseRAF "my-element"
+    fromDynamicElement (UseInterval 15) "my-element"
+
+NB: sets `minify` option to `linear` or else the texture won't be updated.
+
+See [`DynamicsOption`](#DynamicsOption) for details.
+-}
+fromDynamicElement : DynamicsOption -> String -> Task Error Texture
+fromDynamicElement dynOption =
+    fromElementWith
+        { defaultOptions
+        | dynamic = dynOption
+        , minify = linear
+        }
+
+
 {-| Loading a texture can result in two kinds of errors:
 
 * `LoadError` means the image did not load for some reason. Maybe
@@ -153,10 +188,10 @@ loadWith { magnify, minify, horizontalWrap, verticalWrap, flipY } url =
 {-| Same as `fromElement`, but allows to set options.
 -}
 fromElementWith : Options -> String -> Task Error Texture
-fromElementWith { magnify, minify, horizontalWrap, verticalWrap, flipY } elementId =
+fromElementWith { magnify, minify, horizontalWrap, verticalWrap, flipY, dynamic } elementId =
     let
         expand (Resize mag) (Resize min) (Wrap hor) (Wrap vert) =
-            Native.Texture.fromElement mag min hor vert flipY elementId
+            Native.Texture.fromElement mag min hor vert flipY (dynamicsValue dynamic) elementId
     in
         expand magnify minify horizontalWrap verticalWrap
 
@@ -169,6 +204,7 @@ fromElementWith { magnify, minify, horizontalWrap, verticalWrap, flipY } element
 * `verticalWrap` - how to [`Wrap`](#Wrap) the texture vertically if the height is not a power of two
 * `flipY` - flip the Y axis of the texture so it has the same direction
   as the clip-space, i.e. pointing up.
+* `isDynamic` - if the texture source will be updated, so WebGL needs to re-bind it with the interval. Has sense only for the textures using HTML Elements as a source.
 
 You can read more about these parameters in the
 [specification](https://www.khronos.org/opengles/sdk/docs/man/xhtml/glTexParameter.xml).
@@ -179,6 +215,7 @@ type alias Options =
     , horizontalWrap : Wrap
     , verticalWrap : Wrap
     , flipY : Bool
+    , dynamic : DynamicsOption
     }
 
 
@@ -198,6 +235,7 @@ defaultOptions =
     , horizontalWrap = repeat
     , verticalWrap = repeat
     , flipY = True
+    , dynamic = Static
     }
 
 
@@ -219,6 +257,7 @@ nonPowerOfTwoOptions =
     , horizontalWrap = clampToEdge
     , verticalWrap = clampToEdge
     , flipY = True
+    , dynamic = Static
     }
 
 
@@ -346,3 +385,26 @@ or other times you may want to use only a potion of a texture image.
 size : Texture -> ( Int, Int )
 size =
     Native.Texture.size
+
+
+-- DYNAMIC TEXTURES
+
+
+{-| Specifies if texture needs to be updated dynamically
+
+    * `Static` — Texture is static (default)
+    * `UseRAF` — Texture uses RequestAnimationFrame to update
+    * `UseInterval <interval>` — Texture uses interval to update itself
+-}
+type DynamicsOption =
+      Static
+    | UseRAF
+    | UseInterval Int
+
+
+dynamicsValue : DynamicsOption -> Int
+dynamicsValue option =
+    case option of
+        Static -> 0
+        UseRAF -> -1
+        UseInterval v -> v

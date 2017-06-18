@@ -20,7 +20,7 @@ import WebGL exposing (Mesh, Shader, Entity)
 import WebGL.Settings.Blend as Blend
 import WebGL.Settings.DepthTest as DepthTest
 import WebGL.Settings.StencilTest as StencilTest
-import WebGL.Texture as Texture exposing (Error, Texture)
+import WebGL.Texture as Texture exposing (Error, Texture, linear, DynamicsOption(..))
 
 
 type alias Model =
@@ -46,9 +46,13 @@ update action model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { texture = Nothing, theta = 0 }
-    , Task.attempt TextureLoaded (Texture.fromElement "my-element")
-    )
+    let
+        defaultOptions = Texture.defaultOptions
+    in
+        ( { texture = Nothing, theta = 0 }
+        , Task.attempt TextureLoaded
+            (Texture.fromDynamicElement UseRAF "my-element")
+        )
 
 
 main : Program Never Model Msg

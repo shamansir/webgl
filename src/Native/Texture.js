@@ -67,10 +67,13 @@ var _elm_community$webgl$Native_Texture = function () {
     });
   }
 
-  function fromElement(magnify, mininify, horizontalWrap, verticalWrap, flipY, elementId) {
+  function fromElement(magnify, mininify, horizontalWrap, verticalWrap, flipY, dynamicVal, elementId) {
     // eslint-disable-next-line camelcase
     var Scheduler = _elm_lang$core$Native_Scheduler;
     var isMipmap = mininify !== NEAREST && mininify !== LINEAR;
+    var useInterval = (dynamicVal > 0);
+    var useRAF = (dynamicVal < 0);
+    var isDynamic = useInterval || useRAF;
     return Scheduler.nativeBinding(function (callback) {
       var wrapper = document.getElementById(elementId);
       if ((typeof wrapper === 'undefined' || wrapper === null) ||
@@ -87,7 +90,8 @@ var _elm_community$webgl$Native_Texture = function () {
         try {
           gl.bindTexture(gl.TEXTURE_2D, tex);
           gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, element);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+                gl.UNSIGNED_BYTE, element);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magnify);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, mininify);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, horizontalWrap);
@@ -96,6 +100,24 @@ var _elm_community$webgl$Native_Texture = function () {
             gl.generateMipmap(gl.TEXTURE_2D);
           }
           gl.bindTexture(gl.TEXTURE_2D, null);
+          if (isDynamic) {
+            function updateTexture () {
+              gl.bindTexture(gl.TEXTURE_2D, tex);
+              gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
+              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+                    gl.UNSIGNED_BYTE, element);
+              gl.bindTexture(gl.TEXTURE_2D, null);
+            }
+            if (useInterval) {
+              setInterval(updateTexture, dynamicVal);
+            } else {
+              var updater = function() {
+                updateTexture();
+                requestAnimationFrame(updater);
+              };
+              requestAnimationFrame(updater);
+            }
+          }
         } catch (err) {
           if (window.console && window.console.error) window.console.error(err);
         }
@@ -137,7 +159,7 @@ var _elm_community$webgl$Native_Texture = function () {
   return {
     size: size,
     load: F6(load),
-    fromElement: F6(fromElement)
+    fromElement: F7(fromElement)
   };
 
 }();
